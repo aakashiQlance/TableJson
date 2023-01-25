@@ -33,7 +33,7 @@ public class TableActivity extends AppCompatActivity {
         ArrayList<ArrayList<String>> list = new ArrayList<ArrayList<String>>(modal.array);
 
         Log.i("TABLEDATANEW", list.toString());
-
+        int columnSize = list.get(0).size();
         for (int i = 0; i < list.size(); i++) {
             final ArrayList<String> columns = list.get(i);
             final TableRow row1 = new TableRow(TableActivity.this);
@@ -42,7 +42,8 @@ public class TableActivity extends AppCompatActivity {
 
             for (int j = 0; j < list.get(i).size(); j++) {
                 final TextView txt = new TextView(TableActivity.this);
-                txt.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
+                if(columnSize>=4) txt.setTextSize(TypedValue.COMPLEX_UNIT_PT, 5);
+                else txt.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
                 txt.setTypeface(Typeface.SERIF, Typeface.BOLD);
                 txt.setGravity(Gravity.CENTER);
                 txt.setText(columns.get(j));

@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                 mTextButton.setEnabled(true);
 
 
-                                ArrayList<ArrayList<String>> row = new ArrayList<ArrayList<String>>();
+                             /*   ArrayList<ArrayList<String>> row = new ArrayList<ArrayList<String>>();
                                 ArrayList<String> column = new ArrayList<String>();
                                 StringBuffer strBuffer = new StringBuffer();
 
@@ -160,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                         Text.TextBlock block = texts.getTextBlocks().get(0);
                                         String text = block.getText();
                                         Log.i("TABLEDATA", block.getText() + " | ");
-                                        strBuffer.append(text+"|");
+                                        strBuffer.append(text + "|");
                                         column.add(text);
                                     } else {
                                         Text.TextBlock blockObj = texts.getTextBlocks().get(i);
@@ -172,14 +172,14 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                         Rect prevBlockFrame = prevBlockObj.getBoundingBox();
                                         int previousBoxTop = prevBlockFrame.top;
                                         int previousBoxBottom = prevBlockFrame.bottom;
-                                        int prevTopApproxStart = previousBoxTop - 10;
-                                        int prevBottomApproxEnd = previousBoxBottom + 10;
+                                        int prevTopApproxStart = previousBoxTop - 15;
+                                        int prevBottomApproxEnd = previousBoxBottom + 15;
 
                                         if (currentBoxTop > prevTopApproxStart && currentBoxBottom < prevBottomApproxEnd) {
                                             Log.i("TABLEDATA", blockObj.getText() + " | ");
-                                            strBuffer.append(blockObj.getText()+"|");
+                                            strBuffer.append(blockObj.getText() + "|");
                                             column.add(blockObj.getText());
-                                            if(i==texts.getTextBlocks().size()-1){
+                                            if (i == texts.getTextBlocks().size() - 1) {
                                                 ArrayList<String> newList = new ArrayList<String>(column);
                                                 row.add(newList);
                                             }
@@ -189,59 +189,26 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                                             Log.i("TABLEDATA", "---------------------------------");
                                             Log.i("TABLEDATA", blockObj.getText() + " | ");
-                                            strBuffer.delete(0,strBuffer.length());
-                                            strBuffer.append(blockObj.getText()+"|");
+                                            strBuffer.delete(0, strBuffer.length());
+                                            strBuffer.append(blockObj.getText() + "|");
                                             column.clear();
                                             column.add(blockObj.getText());
                                         }
                                     }
-                                }
+                                }*/
 
-                                Log.i("TableData",row.toString());
-                                Intent intent = new Intent(MainActivity.this,TableActivity.class);
+                                ArrayList<ArrayList<String>> row = new ArrayList<ArrayList<String>>(tableData(texts));
+                                Log.i("TableData", row.toString());
+                                Intent intent = new Intent(MainActivity.this, TableActivity.class);
                                 Gson gson = new Gson();
                                 ArrayModal modal = new ArrayModal();
                                 modal.array = row;
 
                                 String obj = gson.toJson(modal);
-                                intent.putExtra("TABLEDATA",obj);
+                                intent.putExtra("TABLEDATA", obj);
                                 startActivity(intent);
-                               /* String resultText = texts.getText();
-                                for (Text.TextBlock block : texts.getTextBlocks()) {
-                                    String blockText = block.getText();
-                                    Point[] blockCornerPoints = block.getCornerPoints();
-                                    Rect blockFrame = block.getBoundingBox();
-
-
-
-                                    for (Text.Line line : block.getLines()) {
-                                        String lineText = line.getText();
-                                        Point[] lineCornerPoints = line.getCornerPoints();
-                                        Rect lineFrame = line.getBoundingBox();
-                                        for (Text.Element element : line.getElements()) {
-                                            String elementText = element.getText();
-                                            Point[] elementCornerPoints = element.getCornerPoints();
-                                            Rect elementFrame = element.getBoundingBox();
-
-                                            *//*for (Text.TextBlock symbol : element.getSymbols()) {
-                                                String symbolText = symbol.getText();
-                                                Point[] symbolCornerPoints = symbol.getCornerPoints();
-                                                Rect symbolFrame = symbol.getBoundingBox();
-                                            }*//*
-                                        }
-                                    }
-                                }*/
 
                                 processTextRecognitionResult(texts);
-/*
-
-                                Log.i("TextJSon",texts.getText().toString());
-                                mPrintText.setText(texts.getText().toString());
-                                mImageView.setVisibility(View.GONE);
-                                mGraphicOverlay.setVisibility(View.GONE);
-                                mPrintText.setVisibility(View.VISIBLE);
-*/
-
 
                             }
                         })
@@ -254,6 +221,123 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                 e.printStackTrace();
                             }
                         });
+    }
+
+
+    private ArrayList<ArrayList<String>> tableData(Text texts) {
+
+        ArrayList<ArrayList<String>> row = new ArrayList<ArrayList<String>>();
+        ArrayList<Text.TextBlock> column = new ArrayList<Text.TextBlock>();
+        int topExpected = 0;
+        int bottomExpected = 0;
+        for (int i = 0; i < texts.getTextBlocks().size(); i++) {
+
+            if (i == 0) {
+                Text.TextBlock firstBlock = texts.getTextBlocks().get(0);
+
+                Log.i("TABLEDATA", firstBlock.getText() + " | ");
+
+                //added expected top and bottom for one row
+                topExpected = firstBlock.getBoundingBox().top-10;
+                bottomExpected = firstBlock.getBoundingBox().bottom + 20;
+
+                //added one column to array
+                column.add(firstBlock);
+
+            } else {
+
+
+
+                Text.TextBlock currentBlockObj = texts.getTextBlocks().get(i);
+                Rect currentBlockFrame = currentBlockObj.getBoundingBox();
+                int currentBoxTop = currentBlockFrame.top;
+                int currentBoxBottom = currentBlockFrame.bottom;
+                if(topExpected==0 && bottomExpected == 0){
+                    topExpected = currentBoxTop-15;
+                    bottomExpected = currentBoxBottom + 20;
+                }
+                if (currentBoxTop > topExpected && currentBoxBottom < bottomExpected) {
+                    Log.i("TABLEDATA", currentBlockObj.getText() + " | ");
+                    column.add(currentBlockObj);
+
+
+                    //added current element's Rect
+                    if (i == texts.getTextBlocks().size() - 1) {
+                        ArrayList<Integer> leftCoordinates = new ArrayList<Integer>();
+                        for (int a = 0; a < column.size(); a++) {
+                            leftCoordinates.add(column.get(a).getBoundingBox().left);
+                        }
+                        ArrayList<Integer> sortedList = bubbleSort(leftCoordinates);
+
+                        ArrayList<String> sortedStrings = new ArrayList<String>();
+
+                        for (int z = 0; z < sortedList.size(); z++) {
+                            for (int col = 0; col < column.size(); col++) {
+                                int leftVal = column.get(col).getBoundingBox().left;
+                                if (sortedList.get(z) == leftVal) {
+                                    sortedStrings.add(column.get(col).getText());
+                                    break;
+                                }
+                            }
+                        }
+
+                        row.add(sortedStrings);
+                        Log.i("ROWDATA", row.toString());
+                    }
+                } else {
+                    ArrayList<Integer> leftCoordinates = new ArrayList<Integer>();
+                    for (int a = 0; a < column.size(); a++) {
+                        leftCoordinates.add(column.get(a).getBoundingBox().left);
+                    }
+                    ArrayList<Integer> sortedList = bubbleSort(leftCoordinates);
+
+                    ArrayList<String> sortedStrings = new ArrayList<String>();
+
+                    for (int z = 0; z < sortedList.size(); z++) {
+                        for (int col = 0; col < column.size(); col++) {
+                            int leftVal = column.get(col).getBoundingBox().left;
+                            if (sortedList.get(z) == leftVal) {
+                                sortedStrings.add(column.get(col).getText());
+                                break;
+                            }
+                        }
+                    }
+
+                    row.add(sortedStrings);
+                    topExpected=0;
+                    bottomExpected=0;
+
+                    Log.i("TABLEDATA", "---------------------------------");
+                    Log.i("TABLEDATA", currentBlockObj.getText() + " | ");
+                    column.clear();
+                    column.add(currentBlockObj);
+
+                    Log.i("ROWDATA", row.toString());
+
+                }
+
+            }
+
+
+        }
+        return row;
+    }
+
+    // A function to implement bubble sort
+    ArrayList<Integer> bubbleSort(ArrayList<Integer> a)  // function to implement bubble sort
+    {
+        int n = a.size();
+        int i, j, temp;
+        for (i = 0; i < n; i++) {
+            for (j = i + 1; j < n; j++) {
+                if (a.get(j) < a.get(i)) {
+                    temp = a.get(i);
+                    a.set(i, a.get(j));
+                    a.set(j, temp);
+                }
+            }
+        }
+        return a;
     }
 
     private void processTextRecognitionResult(Text texts) {
