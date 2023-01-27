@@ -130,15 +130,23 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         mPickImage = findViewById(R.id.pickImage);
         mGraphicOverlay = findViewById(R.id.graphic_overlay);
 
+
+        if (getIntent().getStringExtra("ImageURI") != null)
+        {
+            imageUri = Uri.parse(getIntent().getStringExtra("ImageURI"));
+            mImageView.setVisibility(View.VISIBLE);
+            mPickImage.setVisibility(GONE);
+            mImageView.setImageURI(imageUri);
+        }
+
+
         mPickImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 ImagePicker.with(MainActivity.this)
                         .compress(1024)
-                        .maxResultSize(
-                                1080,
-                                1080
-                        )
+                        .maxResultSize(1080,
+                                1080)
                         .cameraOnly()
                         .start(101);
             }
@@ -171,6 +179,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 imageUri = data.getData();
                 mImageView.setVisibility(View.VISIBLE);
                 mPickImage.setVisibility(GONE);
+
             }
             mImageView.setImageURI(imageUri);
 //            mSelectedImage = bitmap;
