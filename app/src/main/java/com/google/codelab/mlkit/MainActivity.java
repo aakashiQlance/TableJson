@@ -14,17 +14,26 @@
 
 package com.google.codelab.mlkit;
 
+import static android.view.View.GONE;
+
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.ImageDecoder;
 import android.graphics.Rect;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
@@ -36,6 +45,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.dhaval2404.imagepicker.ImagePicker;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.codelab.mlkit.GraphicOverlay.Graphic;
@@ -59,15 +69,7 @@ import java.util.PriorityQueue;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
     private static final String TAG = "MainActivity";
-    /**
-     * Number of results to show in the UI.
-     */
     private static final int RESULTS_TO_SHOW = 3;
-    /**
-     * Dimensions of inputs.
-     */
-    private static final int DIM_IMG_SIZE_X = 224;
-    private static final int DIM_IMG_SIZE_Y = 224;
     private final PriorityQueue<Map.Entry<String, Float>> sortedLabels =
             new PriorityQueue<>(
                     RESULTS_TO_SHOW,
@@ -79,9 +81,11 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         }
                     });
     private ImageView mImageView;
+    private Uri imageUri;
+    private Bitmap bitmap;
     private Button mTextButton;
     private Button mFaceButton;
-    private TextView mPrintText;
+    private Button mPickImage;
     private Bitmap mSelectedImage;
     private GraphicOverlay mGraphicOverlay;
     // Max width (portrait mode)
@@ -104,30 +108,53 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         return bitmap;
     }
 
+    public String getRealPathFromURI(Uri uri) {
+        String[] projection = {MediaStore.Images.Media.DATA};
+        @SuppressWarnings("deprecation")
+        Cursor cursor = managedQuery(uri, projection, null, null, null);
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+        cursor.moveToFirst();
+        return cursor.getString(column_index);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         mImageView = findViewById(R.id.image_view);
+        mImageView.setVisibility(GONE);
 
         mTextButton = findViewById(R.id.button_text);
         mFaceButton = findViewById(R.id.button_face);
-        mPrintText = findViewById(R.id.printText);
-
+        mPickImage = findViewById(R.id.pickImage);
         mGraphicOverlay = findViewById(R.id.graphic_overlay);
+
+        mPickImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ImagePicker.with(MainActivity.this)
+                        .compress(1024)
+                        .maxResultSize(
+                                1080,
+                                1080
+                        )
+                        .cameraOnly()
+                        .start(101);
+            }
+        });
+
         mTextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                runTextRecognition();
+                try {
+                    runTextRecognition();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
-        mFaceButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                runFaceContourDetection();
-            }
-        });
+
         Spinner dropdown = findViewById(R.id.spinner);
         String[] items = new String[]{"Test Image 1 (Text)", "Test Image 2 (Face)"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout
@@ -136,8 +163,24 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         dropdown.setOnItemSelectedListener(this);
     }
 
-    private void runTextRecognition() {
-        InputImage image = InputImage.fromBitmap(mSelectedImage, 0);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 101 && resultCode == RESULT_OK) {
+            if (data != null) {
+                imageUri = data.getData();
+                mImageView.setVisibility(View.VISIBLE);
+                mPickImage.setVisibility(GONE);
+            }
+            mImageView.setImageURI(imageUri);
+//            mSelectedImage = bitmap;
+
+        }
+    }
+
+    private void runTextRecognition() throws IOException {
+//        InputImage image = InputImage.fromBitmap(bitmap, 0);
+        InputImage image = InputImage.fromFilePath(this, imageUri);
         TextRecognizer recognizer = TextRecognition.getClient();
         mTextButton.setEnabled(false);
         recognizer.process(image)
@@ -153,9 +196,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                              /*   ArrayList<ArrayList<String>> row = new ArrayList<ArrayList<String>>();
                                 ArrayList<String> column = new ArrayList<String>();
                                 StringBuffer strBuffer = new StringBuffer();
-
                                 for (int i = 0; i < texts.getTextBlocks().size(); i++) {
-
                                     if (i == 0) {
                                         Text.TextBlock block = texts.getTextBlocks().get(0);
                                         String text = block.getText();
@@ -167,14 +208,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                         Rect blockFrame = blockObj.getBoundingBox();
                                         int currentBoxTop = blockFrame.top;
                                         int currentBoxBottom = blockFrame.bottom;
-
                                         Text.TextBlock prevBlockObj = texts.getTextBlocks().get(i - 1);
                                         Rect prevBlockFrame = prevBlockObj.getBoundingBox();
                                         int previousBoxTop = prevBlockFrame.top;
                                         int previousBoxBottom = prevBlockFrame.bottom;
                                         int prevTopApproxStart = previousBoxTop - 15;
                                         int prevBottomApproxEnd = previousBoxBottom + 15;
-
                                         if (currentBoxTop > prevTopApproxStart && currentBoxBottom < prevBottomApproxEnd) {
                                             Log.i("TABLEDATA", blockObj.getText() + " | ");
                                             strBuffer.append(blockObj.getText() + "|");
@@ -186,7 +225,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                                         } else {
                                             ArrayList<String> newList = new ArrayList<String>(column);
                                             row.add(newList);
-
                                             Log.i("TABLEDATA", "---------------------------------");
                                             Log.i("TABLEDATA", blockObj.getText() + " | ");
                                             strBuffer.delete(0, strBuffer.length());
@@ -238,7 +276,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                 Log.i("TABLEDATA", firstBlock.getText() + " | ");
 
                 //added expected top and bottom for one row
-                topExpected = firstBlock.getBoundingBox().top-10;
+                topExpected = firstBlock.getBoundingBox().top - 10;
                 bottomExpected = firstBlock.getBoundingBox().bottom + 20;
 
                 //added one column to array
@@ -247,13 +285,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             } else {
 
 
-
                 Text.TextBlock currentBlockObj = texts.getTextBlocks().get(i);
                 Rect currentBlockFrame = currentBlockObj.getBoundingBox();
                 int currentBoxTop = currentBlockFrame.top;
                 int currentBoxBottom = currentBlockFrame.bottom;
-                if(topExpected==0 && bottomExpected == 0){
-                    topExpected = currentBoxTop-15;
+                if (topExpected == 0 && bottomExpected == 0) {
+                    topExpected = currentBoxTop - 15;
                     bottomExpected = currentBoxBottom + 20;
                 }
                 if (currentBoxTop > topExpected && currentBoxBottom < bottomExpected) {
@@ -304,8 +341,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     }
 
                     row.add(sortedStrings);
-                    topExpected=0;
-                    bottomExpected=0;
+                    topExpected = 0;
+                    bottomExpected = 0;
 
                     Log.i("TABLEDATA", "---------------------------------");
                     Log.i("TABLEDATA", currentBlockObj.getText() + " | ");
@@ -456,7 +493,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         mGraphicOverlay.clear();
         switch (position) {
             case 0:
-                mSelectedImage = getBitmapFromAsset(this, "Please_walk_on_the_grass.jpg");
+                mSelectedImage = bitmap;
                 break;
             case 1:
                 // Whatever you want to happen when the thrid item gets selected
@@ -484,7 +521,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                             true);
 
             mImageView.setImageBitmap(resizedBitmap);
-            mSelectedImage = resizedBitmap;
+            mSelectedImage = bitmap;
         }
     }
 

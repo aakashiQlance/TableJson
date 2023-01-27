@@ -6,16 +6,16 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".MainActivity">
-    <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/printText"
+
+
+    <Button
+        android:id="@+id/pickImage"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="this is json"
-        android:textSize="34sp"
-        android:visibility="invisible"
+        android:layout_height="55dp"
+        android:text="@string/pick_image"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"  />
 
     <ImageView
         android:id="@+id/image_view"
@@ -23,6 +23,7 @@
         android:layout_height="match_parent"
         android:contentDescription="@string/select_image_for_text_recognition"
         android:scaleType="fitStart"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
