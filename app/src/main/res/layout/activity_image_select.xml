@@ -1,84 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:custom="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/textColorPrimaryInverse"
     android:orientation="vertical"
     tools:context=".ImageSelect_activity">
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="10dp">
-        <TextView
-            android:id="@+id/tvText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="26dp"
-            android:layout_marginStart="20dp"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:text="SelectImage"/>
-
-  <TextView
-      android:id="@+id/tvOkay"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="OK"
-      android:visibility="gone"
-      android:layout_marginEnd="20dp"
-      android:layout_alignParentEnd="true"
-      android:layout_centerVertical="true"
-      android:textSize="26dp"/>
-
-    </RelativeLayout>
-
 
 
     <com.mayank.simplecropview.CropImageView
         android:id="@+id/cropImageView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:padding="@dimen/spacing_xlarge"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         custom:scv_background_color="@color/windowBackground"
         custom:scv_crop_mode="free"
-        custom:scv_frame_color="@color/colorAccent"
+        custom:scv_frame_color="@color/colorPrimary"
         custom:scv_frame_stroke_weight="1dp"
-        custom:scv_guide_color="@color/colorAccent"
+        custom:scv_guide_color="@color/colorPrimary"
         custom:scv_guide_show_mode="show_always"
         custom:scv_guide_stroke_weight="1dp"
-        custom:scv_handle_color="@color/colorAccent"
+        custom:scv_handle_color="@color/colorPrimary"
         custom:scv_handle_show_mode="show_always"
         custom:scv_overlay_color="@color/overlay"
-        custom:scv_touch_padding="8dp"/>
-    <ImageView
-        android:id="@+id/selectImageCrop"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"/>
+        custom:scv_touch_padding="8dp" />
 
-   <!-- <com.mayank.simplecropview.CropImageView
-        android:id="@+id/cropImageView"
+    <LinearLayout
+        android:id="@+id/llButtons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:padding="@dimen/spacing_xlarge"
-        custom:scv_background_color="@color/windowBackground"
-        custom:scv_crop_mode="fit_image"
-        custom:scv_frame_color="@color/colorAccent"
-        custom:scv_frame_stroke_weight="1dp"
-        custom:scv_guide_color="@color/colorAccent"
-        custom:scv_guide_show_mode="show_always"
-        custom:scv_guide_stroke_weight="1dp"
-        custom:scv_handle_color="@color/colorAccent"
-        custom:scv_handle_show_mode="show_always"
-        custom:scv_handle_size="14dp"
-        custom:scv_min_frame_size="50dp"
-        custom:scv_overlay_color="@color/overlay"
-        custom:scv_touch_padding="8dp"
-        />
--->
-</LinearLayout>
+        android:gravity="center"
+        android:padding="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/btnScanImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="20dp"
+            android:background="#858585"
+            android:gravity="center"
+            android:paddingHorizontal="20dp"
+            android:text="Scan Image"
+            android:textColor="@color/colorButtonNormal"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btnGenerateTable"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="20dp"
+            android:background="#858585"
+            android:gravity="center"
+            android:paddingHorizontal="20dp"
+            android:text="Generate Table"
+
+            android:textColor="#55BB39"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
