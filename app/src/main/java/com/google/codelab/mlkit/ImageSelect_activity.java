@@ -2,10 +2,6 @@ package com.google.codelab.mlkit;
 
 import static android.view.View.GONE;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -21,7 +17,12 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.github.dhaval2404.imagepicker.ImagePicker;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -31,32 +32,34 @@ import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 import com.mayank.simplecropview.CropImageView;
 import com.mayank.simplecropview.callback.CropCallback;
 import com.mayank.simplecropview.callback.LoadCallback;
 import com.mayank.simplecropview.callback.SaveCallback;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 public class ImageSelect_activity extends AppCompatActivity {
-     Button mBtnScanImage;
-     Button mBtnGenerateTable;
-    private CropImageView mCropView;
-    ProgressDialog dialog;
     private static final String KEY_FRAME_RECT = "FrameRect";
     private static final String KEY_SOURCE_URI = "SourceUri";
+    private CropImageView mCropView;
 
+    Button mBtnScanImage;
+    Button mBtnGenerateTable;
     private final LoadCallback mLoadCallback = new LoadCallback() {
         @Override
         public void onSuccess() {
 //            selectImageCrop.setVisibility(View.VISIBLE);
 //            mCropView.setVisibility(GONE);
-
+            int[] values = new int[2];
+            mCropView.getLocationOnScreen(values);
+            Log.d("X & Y",mCropView.getWidth()+" "+mCropView.getHeight());
             mBtnGenerateTable.setVisibility(View.VISIBLE);
 
             //  mCropView.crop(mSourceUri).execute(mCropCallback);
@@ -67,7 +70,8 @@ public class ImageSelect_activity extends AppCompatActivity {
         public void onError(Throwable e) {
         }
     };
-
+    ProgressBar mProgressBar;
+    ProgressDialog dialog;
     private final SaveCallback mSaveCallback = new SaveCallback() {
         @Override
         public void onSuccess(Uri outputUri) {
@@ -91,11 +95,79 @@ public class ImageSelect_activity extends AppCompatActivity {
 
         }
     };
+    private Bitmap.CompressFormat mCompressFormat = Bitmap.CompressFormat.JPEG;
+    private final CropCallback mCropCallback = new CropCallback() {
+        @Override
+        public void onSuccess(Bitmap cropped) {
+            mCropView.save(cropped)
+                    .compressFormat(mCompressFormat)
+                    .execute(createSaveUri(), mSaveCallback);
+        }
 
+        @Override
+        public void onError(Throwable e) {
+        }
+    };
+    private RectF mFrameRect = null;
+    private Uri mSourceUri = null;
+
+    public static Uri createNewUri(Context context, Bitmap.CompressFormat format) {
+        long currentTimeMillis = System.currentTimeMillis();
+        Date today = new Date(currentTimeMillis);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        String title = dateFormat.format(today);
+        String dirPath = getDirPath();
+        String fileName = "scv" + title + "." + getMimeType(format);
+        String path = dirPath + "/" + fileName;
+        File file = new File(path);
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, title);
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/" + getMimeType(format));
+        values.put(MediaStore.Images.Media.DATA, path);
+        long time = currentTimeMillis / 1000;
+        values.put(MediaStore.MediaColumns.DATE_ADDED, time);
+        values.put(MediaStore.MediaColumns.DATE_MODIFIED, time);
+        if (file.exists()) {
+            values.put(MediaStore.Images.Media.SIZE, file.length());
+        }
+
+        ContentResolver resolver = context.getContentResolver();
+        Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        return uri;
+    }
+
+    public static String getMimeType(Bitmap.CompressFormat format) {
+        switch (format) {
+            case JPEG:
+                return "jpeg";
+            case PNG:
+                return "png";
+        }
+        return "png";
+    }
+
+    public static String getDirPath() {
+        String dirPath = "";
+        File imageDir = null;
+        File extStorageDir = Environment.getExternalStorageDirectory();
+        if (extStorageDir.canWrite()) {
+            imageDir = new File(extStorageDir.getPath() + "/simplecropview");
+        }
+        if (imageDir != null) {
+            if (!imageDir.exists()) {
+                imageDir.mkdirs();
+            }
+            if (imageDir.canWrite()) {
+                dirPath = imageDir.getPath();
+            }
+        }
+        return dirPath;
+    }
 
     private void runTextRecognition(Uri imageUri) throws IOException {
         InputImage image = InputImage.fromFilePath(this, imageUri);
-        TextRecognizer recognizer = TextRecognition.getClient();
+        TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
         recognizer.process(image)
                 .addOnSuccessListener(
                         new OnSuccessListener<Text>() {
@@ -130,13 +202,13 @@ public class ImageSelect_activity extends AppCompatActivity {
                         });
     }
 
-
     private ArrayList<ArrayList<String>> tableData(Text texts) {
 
         ArrayList<ArrayList<String>> row = new ArrayList<ArrayList<String>>();
         ArrayList<Text.TextBlock> column = new ArrayList<Text.TextBlock>();
         int topExpected = 0;
         int bottomExpected = 0;
+        int currentRow = 0;
         for (int i = 0; i < texts.getTextBlocks().size(); i++) {
 
             if (i == 0) {
@@ -149,6 +221,7 @@ public class ImageSelect_activity extends AppCompatActivity {
                 bottomExpected = firstBlock.getBoundingBox().bottom + 20;
 
                 //added one column to array
+
                 column.add(firstBlock);
 
             } else {
@@ -202,13 +275,16 @@ public class ImageSelect_activity extends AppCompatActivity {
                         for (int col = 0; col < column.size(); col++) {
                             int leftVal = column.get(col).getBoundingBox().left;
                             if (sortedList.get(z) == leftVal) {
-                                sortedStrings.add(column.get(col).getText());
+                                String[] arrayStr = column.get(col).getText().split("\\|");
+                                sortedStrings.addAll(Arrays.asList(arrayStr));
+//                                sortedStrings.add(column.get(col).getText());
                                 break;
                             }
                         }
                     }
 
                     row.add(sortedStrings);
+
                     topExpected = 0;
                     bottomExpected = 0;
 
@@ -244,7 +320,7 @@ public class ImageSelect_activity extends AppCompatActivity {
         return a;
     }
 
-//    private void processTextRecognitionResult(Text texts) {
+    //    private void processTextRecognitionResult(Text texts) {
 //        List<Text.TextBlock> blocks = texts.getTextBlocks();
 //        if (blocks.size() == 0) {
 //            showToast("No text found");
@@ -255,80 +331,9 @@ public class ImageSelect_activity extends AppCompatActivity {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
-
-    private Bitmap.CompressFormat mCompressFormat = Bitmap.CompressFormat.JPEG;
-    private final CropCallback mCropCallback = new CropCallback() {
-        @Override
-        public void onSuccess(Bitmap cropped) {
-            mCropView.save(cropped)
-                    .compressFormat(mCompressFormat)
-                    .execute(createSaveUri(), mSaveCallback);
-        }
-
-        @Override
-        public void onError(Throwable e) {
-        }
-    };
-    private RectF mFrameRect = null;
-    private Uri mSourceUri = null;
-
-    public static Uri createNewUri(Context context, Bitmap.CompressFormat format) {
-        long currentTimeMillis = System.currentTimeMillis();
-        Date today = new Date(currentTimeMillis);
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
-        String title = dateFormat.format(today);
-        String dirPath = getDirPath();
-        String fileName = "scv" + title + "." + getMimeType(format);
-        String path = dirPath + "/" + fileName;
-        File file = new File(path);
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, title);
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/" + getMimeType(format));
-        values.put(MediaStore.Images.Media.DATA, path);
-        long time = currentTimeMillis / 1000;
-        values.put(MediaStore.MediaColumns.DATE_ADDED, time);
-        values.put(MediaStore.MediaColumns.DATE_MODIFIED, time);
-        if (file.exists()) {
-            values.put(MediaStore.Images.Media.SIZE, file.length());
-        }
-
-        ContentResolver resolver = context.getContentResolver();
-        Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        return uri;
-    }
-
-    public static String getMimeType(Bitmap.CompressFormat format) {
-        switch (format) {
-            case JPEG:
-                return "jpeg";
-            case PNG:
-                return "png";
-        }
-        return "png";
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
-    }
-
-    public static String getDirPath() {
-        String dirPath = "";
-        File imageDir = null;
-        File extStorageDir = Environment.getExternalStorageDirectory();
-        if (extStorageDir.canWrite()) {
-            imageDir = new File(extStorageDir.getPath() + "/simplecropview");
-        }
-        if (imageDir != null) {
-            if (!imageDir.exists()) {
-                imageDir.mkdirs();
-            }
-            if (imageDir.canWrite()) {
-                dirPath = imageDir.getPath();
-            }
-        }
-        return dirPath;
     }
 
     @Override
@@ -344,9 +349,7 @@ public class ImageSelect_activity extends AppCompatActivity {
         mBtnScanImage = findViewById(R.id.btnScanImage);
         mBtnGenerateTable = findViewById(R.id.btnGenerateTable);
         mCropView = findViewById(R.id.cropImageView);
-
-        mBtnGenerateTable.setVisibility(GONE);
-
+        mProgressBar = findViewById(R.id.progressBar);
         mBtnScanImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -354,6 +357,8 @@ public class ImageSelect_activity extends AppCompatActivity {
                 ImagePicker.with(ImageSelect_activity.this)
                         .compress(1024)
                         .start(101);
+                mProgressBar.setVisibility(View.VISIBLE);
+
             }
         });
 
@@ -371,6 +376,7 @@ public class ImageSelect_activity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 101 && resultCode == RESULT_OK) {
             if (data != null) {
+                mProgressBar.setVisibility(View.GONE);
                 Uri imageUri = data.getData();
                 mCropView.setVisibility(View.VISIBLE);
 

@@ -58,6 +58,7 @@ import com.google.mlkit.vision.face.FaceDetectorOptions;
 import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -190,7 +191,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private void runTextRecognition() throws IOException {
 //        InputImage image = InputImage.fromBitmap(bitmap, 0);
         InputImage image = InputImage.fromFilePath(this, imageUri);
-        TextRecognizer recognizer = TextRecognition.getClient();
+        TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
         mTextButton.setEnabled(false);
         recognizer.process(image)
                 .addOnSuccessListener(
@@ -253,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
                                 String obj = gson.toJson(modal);
                                 intent.putExtra("TABLEDATA", obj);
-                                startActivity(intent);
+//                                startActivity(intent);
 
                                 processTextRecognitionResult(texts);
 
@@ -328,7 +329,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                         }
 
                         row.add(sortedStrings);
-                        Log.i("ROWDATA", row.toString());
                     }
                 } else {
                     ArrayList<Integer> leftCoordinates = new ArrayList<Integer>();
@@ -358,7 +358,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     column.clear();
                     column.add(currentBlockObj);
 
-                    Log.i("ROWDATA", row.toString());
 
                 }
 

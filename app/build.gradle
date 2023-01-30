@@ -8,6 +8,8 @@ android {
         targetSdkVersion 33
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -38,7 +40,8 @@ dependencies {
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-
+    def multidex_version = "2.0.1"
+    implementation "androidx.multidex:multidex:$multidex_version"
     // Face features
     implementation 'com.google.mlkit:face-detection:16.0.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
@@ -46,7 +49,7 @@ dependencies {
     implementation 'com.github.dhaval2404:imagepicker:2.1'
     implementation 'com.mayank:simplecropview:1.0.0'
 
-
+    implementation 'com.github.yuriy-budiyev:code-scanner:2.3.2'
     // Text features
-    implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.0.0'
+    implementation 'com.google.android.gms:play-services-mlkit-text-recognition:18.0.2'
 }

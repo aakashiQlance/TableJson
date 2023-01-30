@@ -33,26 +33,28 @@ public class TableActivity extends AppCompatActivity {
         ArrayList<ArrayList<String>> list = new ArrayList<ArrayList<String>>(modal.array);
 
         Log.i("TABLEDATANEW", list.toString());
-        int columnSize = list.get(0).size();
-        for (int i = 0; i < list.size(); i++) {
-            final ArrayList<String> columns = list.get(i);
-            final TableRow row1 = new TableRow(TableActivity.this);
-            row1.setPadding(20, 0, 20, 0);
-            row1.setBackgroundResource(R.drawable.cellshape);
+        if (list.size() > 0) {
+            int columnSize = list.get(0).size();
+            for (int i = 0; i < list.size(); i++) {
+                final ArrayList<String> columns = list.get(i);
+                final TableRow row1 = new TableRow(TableActivity.this);
+                row1.setPadding(20, 0, 20, 0);
+                row1.setBackgroundResource(R.drawable.cellshape);
 
-            for (int j = 0; j < list.get(i).size(); j++) {
-                final TextView txt = new TextView(TableActivity.this);
-                if(columnSize>=4) txt.setTextSize(TypedValue.COMPLEX_UNIT_PT, 5);
-                else txt.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-                txt.setTypeface(Typeface.SERIF, Typeface.BOLD);
-                txt.setGravity(Gravity.CENTER);
-                txt.setText(columns.get(j));
-                txt.setTextColor(Color.WHITE);
+                for (int j = 0; j < list.get(i).size(); j++) {
+                    final TextView txt = new TextView(TableActivity.this);
+                    if (columnSize >= 4) txt.setTextSize(TypedValue.COMPLEX_UNIT_PT, 5);
+                    else txt.setTextSize(TypedValue.COMPLEX_UNIT_PT, 6);
+                    txt.setTypeface(Typeface.SERIF, Typeface.BOLD);
+                    txt.setGravity(Gravity.CENTER);
+                    txt.setText(columns.get(j));
+                    txt.setTextColor(Color.WHITE);
 
-                row1.addView(txt);
+                    row1.addView(txt);
+                }
+                TabLayout_Create.addView(row1);
+                TabLayout_Create.setWeightSum(1);
             }
-            TabLayout_Create.addView(row1);
-            TabLayout_Create.setWeightSum(1);
         }
 
     }
